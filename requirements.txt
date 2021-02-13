@@ -1,0 +1,2 @@
+bolinette==0.7.6
+dnspython==2.1.0
