@@ -5,16 +5,15 @@ from legends_explorer.legends.types import Entity
 
 
 class Collection:
-    def __init__(self, name: str, key: str, root: Entity):
+    def __init__(self, name: str, root: Entity):
         self._name = name
-        self._key = key
         self._entities = {}
         self._root = root
 
     async def parse(self, elem: Element):
         for child in elem:  # type: Element
             entity = self._root.parse(child)
-            merge_key = entity[self._key]
+            merge_key = entity[self._root.merge_id]
             if merge_key in self._entities:
                 entity = self._merge(self._entities[merge_key], entity)
             self._entities[merge_key] = entity

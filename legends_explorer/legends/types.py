@@ -45,14 +45,45 @@ class Str(ParsingType):
         return override
 
 
+class Population(ParsingType):
+    def parse(self, elem: Element, **kwargs):
+        race, population = elem.text.split(':')
+        return {'race': race, 'population': int(population)}
+
+    def merge(self, origin, override):
+        return override
+
+
 class Coordinates(ParsingType):
     def parse(self, elem: Element, **kwargs):
-        coords = []
+        if '|' in elem.text:
+            raise ValueError()
+        x, y = elem.text.split(',')
+        return {'x': int(x), 'y': int(y)}
+
+    def merge(self, origin, override):
+        return override
+
+
+class Path(ParsingType):
+    def __init__(self, *, points: int = 2):
+        self._points = points
+        if points > 3:
+            self._origin_point = ord('a')
+        else:
+            self._origin_point = ord('x')
+
+    def parse(self, elem: Element, **kwargs):
+        ord_a = ord('a')
+        path = []
         for coord in elem.text.split('|'):
             if coord:
-                x, y = coord.split(',')
-                coords.append({'x': int(x), 'y': int(y)})
-        return coords
+                points = coord.split(',')
+                coords = {}
+                for index in range(len(points)):
+                    coords[chr((self._origin_point - ord_a + index) % 26 + ord_a)] = int(points[index])
+                path.append(coords)
+        return path
 
     def merge(self, origin, override):
         return override
@@ -74,6 +105,10 @@ class Entity(ParsingType):
         self._merge_id = merge_id
         self._fields = fields
         self._transforms = transforms
+
+    @property
+    def merge_id(self):
+        return self._merge_id
 
     def parse(self, elem: Element, **kwargs):
         fields = {}
@@ -115,9 +150,8 @@ class Entity(ParsingType):
 
 
 class List(ParsingType):
-    def __init__(self, key: str, elem: Entity):
+    def __init__(self, elem: Entity):
         self._elem = elem
-        self._key = key
 
     def parse(self, elem: Element, **kwargs):
         entities = []
@@ -127,8 +161,8 @@ class List(ParsingType):
 
     def merge(self, origin, override):
         new_list = []
-        origin_items = dict(map(lambda e: (e[self._key], e), origin))
-        override_items = dict(map(lambda e: (e[self._key], e), override))
+        origin_items = dict(map(lambda e: (e[self._elem.merge_id], e), origin))
+        override_items = dict(map(lambda e: (e[self._elem.merge_id], e), override))
         for _id in origin_items | override_items:
             if _id in origin_items and _id not in override_items:
                 new_list.append(origin_items[_id])
