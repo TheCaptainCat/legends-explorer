@@ -103,7 +103,8 @@ class Rectangle(ParsingType):
 class Entity(ParsingType):
     def __init__(self, merge_id: str, fields: Dict[str, ParsingType], *, transforms: Dict[str, str] = None):
         self._merge_id = merge_id
-        self._fields = fields
+        self._fields = dict([(field, fields[field]) for field in fields if not isinstance(fields[field], GroupTree)])
+        self._group_trees = [value for value in fields.values() if isinstance(value, GroupTree)]
         self._transforms = transforms
 
     @property
@@ -123,7 +124,12 @@ class Entity(ParsingType):
                         print('*** Duplicated key', elem.tag, tag)
                     fields[tag] = res
             else:
-                print('*** Missing def', elem.tag, tag)
+                for group in self._group_trees:
+                    if group.test(tag):
+                        group.parse(child, parent_fields=fields)
+                        break
+                else:
+                    print('*** Missing def', elem.tag, tag)
         return fields
 
     def merge(self, origin, override):
@@ -213,3 +219,26 @@ class LinkToPreviousGroupBy(ParsingType):
     def merge(self, origin, override):
         print('*** Unsupported merge type LinkToPreviousGroupBy')
         return origin
+
+
+class GroupTree(ParsingType):
+    def __init__(self, start: str, depth: int, elem: ParsingType):
+        self._start = start
+        self._depth = depth
+        self._elem = elem
+
+    def test(self, tag: str):
+        return tag.startswith(self._start)
+
+    def parse(self, elem: Element, *, parent_fields: Dict[str, Any] = None):
+        path = [self._start[:-1]] + elem.tag[len(self._start):].split('_', maxsplit=self._depth - 1)
+        collection = parent_fields
+        for key in path[:-1]:
+            if key not in collection:
+                collection[key] = {}
+            collection = collection[key]
+        collection[path[-1]] = self._elem.parse(elem)
+
+    def merge(self, origin, override):
+        print('*** Unsupported merge type GroupTree')
+        pass

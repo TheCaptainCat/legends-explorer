@@ -1,6 +1,7 @@
 from legends_explorer.legends import Collection
 from legends_explorer.legends.types import (
-    Int, Str, Rectangle, Coordinates, List, GroupBy, Bool, LinkToPreviousGroupBy, Entity, Population, Path
+    Int, Str, Rectangle, Coordinates, List, GroupBy, Bool,
+    LinkToPreviousGroupBy, Entity, Population, Path, GroupTree
 )
 
 definitions = {
@@ -151,5 +152,13 @@ definitions = {
                 }))
             }))
         }))
+    })),
+    'creature_raw': Collection('creature_raw', Entity('creature_id', {
+        'creature_id': Str(), 'name_singular': Str(), 'name_plural': Str(), 'mundane': Bool(), 'mates_to_breed': Bool(),
+        'vermin_': GroupTree('vermin_', 1, Bool()), 'two_genders': Bool(), 'has_male': Bool(), 'has_female': Bool(),
+        'small_race': Bool(), 'biomes_': GroupTree('biome_', 3, Bool()), 'has_any_': GroupTree('has_any_', 1, Bool()),
+        'all_castes_alive': Bool(), 'large_roaming': Bool(), 'savage': Bool(), 'ubiquitous': Bool(), 'good': Bool(),
+        'loose_clusters': Bool(), 'equipment': Bool(), 'equipment_wagon': Bool(), 'fanciful': Bool(), 'evil': Bool(),
+        'does_not_exist': Bool(), 'artificial_hiveable': Bool(), 'occurs_as_entity_race': Bool(), 'generated': Bool()
     }))
 }
