@@ -69,7 +69,7 @@ class LegendsParser:
         cols = self.mongo.db.collection_names()
         for name, parser in self._parsers.items():
             if name not in cols and (push_only is None or name in push_only):
-                self.context.logger.debug(f'Inserting {name}')
+                self.context.logger.debug(f'Inserting {name}: {len(parser)} entities')
                 await parser.insert(self.mongo)
             else:
                 self.context.logger.debug(f'Not inserting {name}')

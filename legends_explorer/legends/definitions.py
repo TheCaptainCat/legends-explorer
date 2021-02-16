@@ -1,7 +1,7 @@
 from legends_explorer.legends import Collection
 from legends_explorer.legends.types import (
-    Int, Str, Rectangle, Coordinates, List, GroupBy, Bool,
-    LinkToPreviousGroupBy, Entity, Population, Path, GroupTree
+    Int, Str, Rectangle, Coordinates, List, GroupBy, Bool, SplitStr,
+    LinkToPreviousGroupBy, Entity, Population, Path, GroupTree, Wrap
 )
 
 definitions = {
@@ -139,8 +139,8 @@ definitions = {
             'id': Int(), 'name': Str(), 'name_male': Str(), 'name_female': Str(), 'spouse': Str(),
             'spouse_male': Str(), 'spouse_female': Str()
         })),
-        'entity_link': GroupBy('entity_link', Entity('target', {
-            'type': Str(), 'target': Str(), 'strength': Int()
+        'entity_link': GroupBy('entity_links', Entity('target', {
+            'type': Str(), 'target': Int(), 'strength': Int()
         })),
         'occasion': GroupBy('occasions', Entity('id', {
             'id': Int(), 'name': Str(), 'event': Int(),
@@ -160,5 +160,83 @@ definitions = {
         'all_castes_alive': Bool(), 'large_roaming': Bool(), 'savage': Bool(), 'ubiquitous': Bool(), 'good': Bool(),
         'loose_clusters': Bool(), 'equipment': Bool(), 'equipment_wagon': Bool(), 'fanciful': Bool(), 'evil': Bool(),
         'does_not_exist': Bool(), 'artificial_hiveable': Bool(), 'occurs_as_entity_race': Bool(), 'generated': Bool()
+    })),
+    'identities': Collection('identities', Entity('id', {
+        'id': Int(), 'name': Str(), 'histfig_id': Int(), 'birth_year': Int(), 'birth_second': Int(), 'entity_id': Int(),
+        'profession': Str(), 'caste': Str(), 'race': Str(), 'nemesis_id': Int()
+    })),
+    'historical_events': Collection('historical_events', Entity('id', {
+        'id': Int(), 'year': Int(), 'seconds72': Int(), 'type': Str(), 'hfid': GroupBy('hfids', Int()), 'state': Str(),
+        'subregion_id': Int(), 'feature_layer_id': Int(), 'coords': Coordinates(), 'position_id': Int(), 'link': Str(),
+        'civ_id': Int(), 'artifact_id': Int(), 'dest_entity_id': Int(), 'source_site_id': Int(), 'unit_id': Int(),
+        'source_structure_id': Int(), 'source_entity_id': Int(), 'from_original': Bool(), 'identity_id': Int(),
+        'trickster_hfid': Int(), 'hist_figure_id': Int(), 'reason': Str(), 'reason_id': Int(), 'slayer_hfid': Int(),
+        'slayer_item_id': Int(), 'slayer_shooter_item_id': Int(), 'cause': Str(), 'slayer_race': Str(), 'action': Str(),
+        'slayer_caste': Str(), 'agreement_id': Int(), 'successful': Bool(), 'failed_judgment_test': Bool(),
+        'method': Str(), 'top_facet': Str(), 'top_facet_rating': Int(), 'top_facet_modifier': Int(), 'site_id': Int(),
+        'ally_defense_bonus': Int(), 'top_value': Str(), 'top_value_rating': Int(), 'top_value_modifier': Int(),
+        'student_hfid': Int(), 'teacher_hfid': Int(), 'interaction': Str(), 'hfid_target': Int(), 'wc_id': Int(),
+        'honor_id': Int(), 'target_enid': Int(), 'entity_id': Int(), 'target_hfid': Int(), 'corruptor_hfid': Int(),
+        'target_seen_as': Str(), 'corruptor_seen_as': Str(), 'unit_type': Str(), 'hf_rep_1_of_2': Str(),
+        'hf_rep_2_of_1': Str(), 'identity_id1': Int(), 'identity_id2': Int(), 'hfid1': Int(), 'hfid2': Int(),
+        'winner_hfid': Int(), 'competitor_hfid': GroupBy('competitor_hfids', Int()), 'occasion_id': Int(),
+        'schedule_id': Int(), 'gambler_hfid': Int(), 'structure_id': Int(), 'old_account': Int(),
+        'new_account': Int(), 'claim': Str(), 'knowledge': SplitStr(':'), 'delegated': Bool(), 'inherited': Bool(),
+        'giver_hist_figure_id': Int(), 'giver_entity_id': Int(), 'receiver_hist_figure_id': Int(), 'return': Bool(),
+        'receiver_entity_id': Int(), 'building_profile_id': Int(), 'acquirer_hfid': Int(), 'purchased_unowned': Bool(),
+        'rebuilt_ruined': Bool(), 'secret_goal': Str(), 'form_id': Int(), 'position_profile_id': Int(),
+        'circumstance_id': Int(), 'seeker_hfid': Int(), 'relationship': Str(), 'entity_1': Int(), 'entity_2': Int(),
+        'speaker_hfid': Int(), 'site_hfid': Int(), 'joiner_entity_id': GroupBy('joiner_entity_ids', Int()),
+        'surveiled_convicted': Bool(), 'implicated_hfid': GroupBy('implicated_hfids', Int()), 'trader_hfid': Int(),
+        'dest_site_id': Int(), 'production_zone_id': Int(), 'allotment': Int(), 'allotment_index': Int(),
+        'account_shift': Int(), 'hist_fig_id': Int(), 'convicted_hfid': Int(), 'convicter_enid': Int(),
+        'crime': Str(), 'prison_months': Int(), 'fooled_hfid': Int(), 'framer_hfid': Int(), 'death_penalty': Bool(),
+        'wrongful_conviction': Bool(), 'subtype': Str(), 'group_1_hfid': Int(), 'joined_entity_id': Int(),
+        'group_2_hfid': GroupBy('group_2_hfids', Int()), 'topic': Str(), 'relevant_position_profile_id': Int(),
+        'group_hfid': GroupBy('group_hfids', Int()), 'target_identity': Int(), 'leader_hfid': Int(),
+        'site_civ_id': Int(), 'confessed_after_apb_arrest_enid': Int(), 'interrogator_hfid': Int(),
+        'top_relationship_rating': Int(), 'top_relationship_modifier': Int(), 'name_only': Bool(),
+        'partial_incorporation': Bool(), 'situation': Str(), 'shrine_amount_destroyed': Int(), 'detected': Bool(),
+        'dest_structure_id': Int(), 'wounder_hfid': Int(), 'woundee_hfid': Int(), 'attacker_civ_id': Int(),
+        'defender_civ_id': Int(), 'attacker_general_hfid': Int(), 'defender_general_hfid': Int(), 'wcid': Int(),
+        'attacker_merc_enid': Int(), 'first': Bool(), 'quality': Int(), 'snatcher_hfid': Int(), 'ransomed_hfid': Int(),
+        'ransomer_hfid': Int(), 'payer_hfid': Int(), 'moved_to_site_id': Int(), 'body_state': Str(),
+        'builder_hfid': Int(), 'resident_civ_id': Int(), 'mood': Str(), 'persecutor_hfid': Int(), 'master_wcid': Int(),
+        'persecutor_enid': Int(), 'site_id1': Int(), 'site_id2': Int(), 'relevant_entity_id': Int(),
+        'last_owner_hfid': Int(), 'actor_hfid': Int(), 'doer_hfid': Int(), 'attacker_hfid': Int(),
+        'expelled_hfid': GroupBy('expelled_hfids', Int()), 'instigator_hfid': Int(), 'pos_taker_hfid': Int(),
+        'property_confiscated_from_hfid': GroupBy('property_confiscated_from_hfids', Int()),
+        'expelled_creature': GroupBy('expelled_creatures', Wrap('creature', Int())), 'changee_hfid': Int(),
+        'expelled_pop_id': LinkToPreviousGroupBy('expelled_creatures', 'pop_id', Int()), 'join_entity_id': Int(),
+        'expelled_number': LinkToPreviousGroupBy('expelled_creatures', 'number', Int()), 'changer_hfid': Int(),
+        'dispute': Str(), 'entity_id_1': Int(), 'entity_id_2': Int(), 'site_id_1': Int(), 'site_id_2': Int(),
+        'pop_': GroupTree('pop_', 1, Int()), 'old_race': Str(), 'old_caste': Str(), 'new_race': Str(),
+        'new_caste': Str(), 'top_relationship_factor': Str(), 'corrupt_convicter_hfid': Int(), 'plotter_hfid': Int(),
+        'initiating_enid': Int(), 'joining_enid': GroupBy('joining_enids', Int()), 'arresting_enid': Int(),
+        'wanted_and_recognized': Bool(), 'held_firm_in_interrogation': Bool(), 'lure_hfid': Int(),
+        'coconspirator_bonus': Int(), 'site_entity_id': Int(), 'civ_entity_id': Int(), 'new_site_civ_id': Int(),
+        'relevant_id_for_method': Int(), 'acquirer_enid': Int(), 'defender_merc_enid': Int(), 'creator_hfid': Int(),
+        'coconspirator_hfid': Int(), 'surveiled_coconspirator': Bool(), 'convict_is_contact': Bool(),
+        'new_leader_hfid': Int(), 'exiled': Bool(), 'contact_hfid': Int(), 'surveiled_contact': Bool(),
+        'trader_entity_id': Int(), 'religion_id': Int(), 'corruptor_identity': Int(), 'overthrown_hfid': Int(),
+        'new_equipment_level': Int(), 'conspirator_hfid': GroupBy('conspirator_hfids', Int()),
+        'did_not_reveal_all_in_interrogation': Bool(), 'destroyed_structure_id': Int(), 'd_support_merc_enid': Int(),
+        'modifier_hfid': Int(), 'modification': Str(), 'a_support_merc_enid': Int(), 'rebuilt': Bool(),
+        'law_add': Str(), 'law_remove': Str(), 'disturbance': Bool(), 'surveiled_target': Bool(), 'position': Str(),
+        'site_property_id': Int(), 'destroyer_enid': Int(), 'saboteur_hfid': Int(), 'site': Int(), 'structure': Int(),
+        'histfig': Int(), 'civ': Int(), 'link_type': Str(), 'new_job': Str(), 'old_job': Str(), 'appointer_hfid': Int(),
+        'promise_to_hfid': Int(), 'trickster': Int(), 'identity_histfig_id': Int(), 'identity_name': Str(),
+        'target': Int(), 'slayer_hf': Int(), 'death_cause': Str(), 'victim_hf': Int(), 'item_type': Str(), 'mat': Str(),
+        'entity': Int(), 'item': Int(), 'stash_site': Int(), 'theft_method': Str(), 'item_subtype': Str(),
+        'creator_unit_id': Int(), 'hf': Int(), 'hf_target': Int(), 'victim': Int(), 'race': Str(), 'caste': Str(),
+        'part_lost': Bool(), 'eater': Int(), 'wounder': Int(), 'woundee': Int(), 'woundee_race': Int(),
+        'woundee_caste': Int(), 'body_part': Int(), 'injury_type': Str(), 'site_civ': Int(), 'builder_hf': Int(),
+        'rebuild': Bool(), 'changee': Int(), 'changer': Int(), 'pets': Str(), 'group': Int(),
+        'identity_nemesis_id': Int(), 'identity_race': Str(), 'identity_caste': Str(), 'mattype': Int(),
+        'victim_entity': Int(), 'abuse_type': Str(), 'pile_type': Str(), 'bodies': GroupBy('bodies_list', Int()),
+        'source': Int(), 'destination': Int(), 'matindex': Int(), 'student': Int(), 'teacher': Int(),
+        'artifact': Int(), 'secret_text': Str(), 'tree': Int(), 'item_mat': Str(), 'interaction_action': Str(),
+        'doer': Int(), 'sanctify_hf': Int(), 'region': Int(),
+        'circumstance': Entity('type', {'type': Str(), 'hist_event_collection': Int()})
     }))
 }

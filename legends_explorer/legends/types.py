@@ -1,52 +1,80 @@
+import re
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from xml.etree.ElementTree import Element
+
+str_regex = re.compile('[\t\n ]')
 
 
 class ParsingType(ABC):
     @abstractmethod
-    def parse(self, elem: Element, *, parent_fields: Dict[str, Any] = None):
+    def merge(self, origin, override):
         pass
 
+
+class BasicType(ParsingType, ABC):
     @abstractmethod
-    def merge(self, origin, override):
+    def parse(self, elem: Element) -> Union[str, int, float, list]:
         pass
 
 
-class Bool(ParsingType):
-    def parse(self, *args, **kwargs):
+class ComplexType(ParsingType, ABC):
+    @abstractmethod
+    def parse(self, elem: Element, *, parent_fields: Dict[str, Any]) -> None:
+        pass
+
+
+class Bool(BasicType):
+    def parse(self, elem: Element):
+        if elem.tag == 'false':
+            return False
         return True
 
     def merge(self, origin, override):
         return True
 
 
-class Int(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class Int(BasicType):
+    def parse(self, elem: Element):
         return int(elem.text)
 
     def merge(self, origin, override):
         return override
 
 
-class Float(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class Float(BasicType):
+    def parse(self, elem: Element):
         return float(elem.text)
 
     def merge(self, origin, override):
         return override
 
 
-class Str(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class Str(BasicType):
+    def parse(self, elem: Element):
         return elem.text
 
     def merge(self, origin, override):
-        return override
+        new_str = str_regex.sub('', override)
+        if len(new_str) > 0:
+            return override
+        return origin
 
 
-class Population(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class SplitStr(BasicType):
+    def __init__(self, char: str):
+        self._char = char
+
+    def parse(self, elem: Element):
+        return elem.text.split(self._char)
+
+    def merge(self, origin, override):
+        print('*** Unsupported merge type GroupTree')
+        return origin
+
+
+class Population(BasicType):
+    def parse(self, elem: Element):
         race, population = elem.text.split(':')
         return {'race': race, 'population': int(population)}
 
@@ -54,8 +82,8 @@ class Population(ParsingType):
         return override
 
 
-class Coordinates(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class Coordinates(BasicType):
+    def parse(self, elem: Element):
         if '|' in elem.text:
             raise ValueError()
         x, y = elem.text.split(',')
@@ -65,7 +93,7 @@ class Coordinates(ParsingType):
         return override
 
 
-class Path(ParsingType):
+class Path(BasicType):
     def __init__(self, *, points: int = 2):
         self._points = points
         if points > 3:
@@ -73,7 +101,7 @@ class Path(ParsingType):
         else:
             self._origin_point = ord('x')
 
-    def parse(self, elem: Element, **kwargs):
+    def parse(self, elem: Element):
         ord_a = ord('a')
         path = []
         for coord in elem.text.split('|'):
@@ -89,8 +117,8 @@ class Path(ParsingType):
         return override
 
 
-class Rectangle(ParsingType):
-    def parse(self, elem: Element, **kwargs):
+class Rectangle(BasicType):
+    def parse(self, elem: Element):
         point0, point1 = elem.text.split(':')
         point00, point01 = point0.split(',')
         point10, point11 = point1.split(',')
@@ -101,7 +129,8 @@ class Rectangle(ParsingType):
 
 
 class Entity(ParsingType):
-    def __init__(self, merge_id: str, fields: Dict[str, ParsingType], *, transforms: Dict[str, str] = None):
+    def __init__(self, merge_id: str, fields: Dict[str, Union[BasicType, ComplexType]],
+                 *, transforms: Dict[str, str] = None):
         self._merge_id = merge_id
         self._fields = dict([(field, fields[field]) for field in fields if not isinstance(fields[field], GroupTree)])
         self._group_trees = [value for value in fields.values() if isinstance(value, GroupTree)]
@@ -111,18 +140,20 @@ class Entity(ParsingType):
     def merge_id(self):
         return self._merge_id
 
-    def parse(self, elem: Element, **kwargs):
+    def parse(self, elem: Element):
         fields = {}
         for child in elem:  # type: Element
             tag = child.tag
             if self._transforms is not None and tag in self._transforms:
                 tag = self._transforms[tag]
             if tag in self._fields:
-                res = self._fields[tag].parse(child, parent_fields=fields)
-                if res is not None:
-                    if tag in fields:
-                        print('*** Duplicated key', elem.tag, tag)
-                    fields[tag] = res
+                if tag in fields:
+                    print('*** Duplicated key', elem.tag, tag)
+                p_type = self._fields[tag]
+                if isinstance(p_type, BasicType):
+                    fields[tag] = p_type.parse(child)
+                elif isinstance(p_type, ComplexType):
+                    p_type.parse(child, parent_fields=fields)
             else:
                 for group in self._group_trees:
                     if group.test(tag):
@@ -155,11 +186,11 @@ class Entity(ParsingType):
         return key in self._fields
 
 
-class List(ParsingType):
+class List(BasicType):
     def __init__(self, elem: Entity):
         self._elem = elem
 
-    def parse(self, elem: Element, **kwargs):
+    def parse(self, elem: Element):
         entities = []
         for child in elem:  # type: Element
             entities.append(self._elem.parse(child))
@@ -179,8 +210,8 @@ class List(ParsingType):
         return new_list
 
 
-class GroupBy(ParsingType):
-    def __init__(self, key: str, elem: ParsingType):
+class GroupBy(ComplexType):
+    def __init__(self, key: str, elem: Union[BasicType, Entity]):
         self._key = key
         self._elem = elem
 
@@ -188,7 +219,7 @@ class GroupBy(ParsingType):
     def group_key(self):
         return self._key
 
-    def parse(self, elem: Element, *, parent_fields=None):
+    def parse(self, elem: Element, *, parent_fields):
         if parent_fields is None:
             return None
         if self._key not in parent_fields:
@@ -196,12 +227,21 @@ class GroupBy(ParsingType):
         parent_fields[self._key].append(self._elem.parse(elem))
 
     def merge(self, origin, override):
-        print('*** Unsupported merge type GroupBy')
-        return origin
+        new_grp = []
+        if isinstance(self._elem, Entity):
+            print('*** Unsupported merge type GroupBy')
+            return origin
+        else:
+            for elem in origin:
+                if elem not in override:
+                    new_grp.append(elem)
+            for elem in override:
+                new_grp.append(elem)
+        return new_grp
 
 
-class LinkToPreviousGroupBy(ParsingType):
-    def __init__(self, group_by_key: str, key: str, elem: Entity):
+class LinkToPreviousGroupBy(ComplexType):
+    def __init__(self, group_by_key: str, key: str, elem: Union[BasicType, Entity]):
         self._grp_key = group_by_key
         self._key = key
         self._elem = elem
@@ -210,7 +250,7 @@ class LinkToPreviousGroupBy(ParsingType):
     def group_key(self):
         return self._grp_key
 
-    def parse(self, elem: Element, *, parent_fields=None):
+    def parse(self, elem: Element, *, parent_fields):
         if parent_fields is None or self._grp_key not in parent_fields:
             return None
         if len(parent_fields[self._grp_key]) > 0:
@@ -221,8 +261,21 @@ class LinkToPreviousGroupBy(ParsingType):
         return origin
 
 
-class GroupTree(ParsingType):
-    def __init__(self, start: str, depth: int, elem: ParsingType):
+class Wrap(BasicType):
+    def __init__(self, wrapping_key, elem: BasicType):
+        self._key = wrapping_key
+        self._elem = elem
+
+    def parse(self, elem: Element):
+        return {self._key: self._elem.parse(elem)}
+
+    def merge(self, origin, override):
+        print('*** Unsupported merge type Wrap')
+        return origin
+
+
+class GroupTree(ComplexType):
+    def __init__(self, start: str, depth: int, elem: BasicType):
         self._start = start
         self._depth = depth
         self._elem = elem
@@ -230,7 +283,7 @@ class GroupTree(ParsingType):
     def test(self, tag: str):
         return tag.startswith(self._start)
 
-    def parse(self, elem: Element, *, parent_fields: Dict[str, Any] = None):
+    def parse(self, elem: Element, *, parent_fields):
         path = [self._start[:-1]] + elem.tag[len(self._start):].split('_', maxsplit=self._depth - 1)
         collection = parent_fields
         for key in path[:-1]:
@@ -241,4 +294,4 @@ class GroupTree(ParsingType):
 
     def merge(self, origin, override):
         print('*** Unsupported merge type GroupTree')
-        pass
+        return origin

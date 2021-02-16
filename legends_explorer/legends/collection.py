@@ -24,3 +24,6 @@ class Collection:
     async def insert(self, mongo: LegendsConnection):
         regions = [r for r in self._entities.values()]
         mongo.db[self._name].insert(regions)
+
+    def __len__(self):
+        return len(self._entities)
